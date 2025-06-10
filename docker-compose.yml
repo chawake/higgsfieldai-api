@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: ./
-    container_name: songcoverapi_app
+    container_name: ${PROJECT_NAME}_app
     depends_on:
       - db
     env_file:
@@ -17,7 +17,7 @@ services:
 
   db:
     image: postgres:latest
-    container_name: songcoverapi_db
+    container_name: ${PROJECT_NAME}_db
     env_file:
       - .env
     volumes:
