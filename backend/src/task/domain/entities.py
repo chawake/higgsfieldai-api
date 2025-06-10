@@ -8,8 +8,7 @@ from src.integration.domain.dtos import IntegrationTaskRunParamsDTO
 
 
 class TaskSource(str, Enum):
-    playht = "playht"
-    topmediai = "topmediai"
+    higgsfieldai = "higgsfieldai"
 
 
 class TaskStatus(str, Enum):

@@ -1,8 +1,8 @@
 from src.task.domain.dtos import TaskResultDTO
 from src.task.domain.entities import TaskSource, TaskStatus
-from src.integration.domain.dtos import PlayHTStatus, PlayHTResponseDTO
 from src.task.application.interfaces.task_runner import TResponse
-from src.integration.infrastructure.external_api.topmediai.schemas import TopMediaiCoverResponse
+
+from src.integration.domain.entities import IntegrationTask
 
 
 class IntegrationResponseToDomainMapper:
@@ -12,52 +12,32 @@ class IntegrationResponseToDomainMapper:
     def map_one(self, data: TResponse) -> TaskResultDTO:
         self.source = self._define_source(data)
 
-        if self.source == TaskSource.playht:
-            return PlayHTResponseToDomainMapper().map_one(data)
-        elif self.source == TaskSource.topmediai:
-            return TopMediaiResponseToDomainMapper().map_one(data)
+        if self.source == TaskSource.higgsfieldai:
+            return HiggsfieldaiResponseToDomainMapper().map_one(data)
 
         raise ValueError("Failed to map integration response: Unknown data source")
 
     def _define_source(self, data: TResponse) -> TaskSource | None:
         if self.source:
             return self.source
-        if hasattr(data, "status") and hasattr(data, "output"):
-            return TaskSource.playht
-        elif hasattr(data, "status") and hasattr(data, "data"):
-            return TaskSource.topmediai
+        if hasattr(data, "status") and hasattr(data, "result"):
+            return TaskSource.higgsfieldai
 
 
-class TopMediaiResponseToDomainMapper:
-    def map_one(self, data: TopMediaiCoverResponse) -> TaskResultDTO:
-        status = self._map_status(data.status)
+class HiggsfieldaiResponseToDomainMapper:
+    def map_one(self, data: IntegrationTask) -> TaskResultDTO:
         return TaskResultDTO(
-            status=status, result=data.data.combine_file, error=data.message if status is TaskStatus.failed else None
+            status=self._map_status(data.status),
+            result=data.result,
+            error=None
         )
 
     @staticmethod
-    def _map_status(status: int) -> TaskStatus:
-        if status == 200:
-            return TaskStatus.finished
-        elif status >= 400:
-            return TaskStatus.failed
-        return TaskStatus.queued
-
-
-class PlayHTResponseToDomainMapper:
-    def map_one(self, data: PlayHTResponseDTO) -> TaskResultDTO:
-        return TaskResultDTO(
-            status=self._map_playht_status(data.status),
-            result=data.output.url if data.output else None,
-            error=data.model_dump_json() if data.status == PlayHTStatus.failed else None,
-        )
-
-    def _map_playht_status(self, status: PlayHTStatus) -> TaskStatus:
-        if status == PlayHTStatus.pending:
+    def _map_status(self, status: str) -> TaskStatus:
+        if status == "queued":
             return TaskStatus.queued
-        if status == PlayHTStatus.in_progress:
+        elif status == "in_progress":
             return TaskStatus.started
-        if status == PlayHTStatus.completed:
+        elif status == "completed":
             return TaskStatus.finished
-        if status == PlayHTStatus.failed:
-            return TaskStatus.failed
+        raise ValueError(f"Failed to map response: Unknown status {status}")
