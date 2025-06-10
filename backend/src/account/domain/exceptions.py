@@ -1,0 +1,2 @@
+class NoAvailableAccountsException(Exception):
+    pass
