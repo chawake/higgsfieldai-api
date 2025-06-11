@@ -26,15 +26,19 @@ class RunTaskUseCase:
         command = TaskRun(**dto.model_dump(), image=image)
         logger.info(f"Running task {task_id}")
         logger.debug(f"Task {task_id} params: {command}")
-        result = await self._run(task_id, command)
+        _, error = await self._run(task_id, command)
 
-        if isinstance(result, str):  # If error occured
-            await self._set_task_status(task_id, status=TaskStatus.failed, error=result)
+        if error is not None:
+            await self._set_task_status(task_id, status=TaskStatus.failed, error=error)
+            return
+
+        result, error = await self._wait_for_result(task_id)
+        if error is not None:
+            await self._set_task_status(task_id, status=TaskStatus.failed, error=error)
             return
 
         logger.info(f"Task {task_id} result: {result}")
-        result_domain = IntegrationResponseToDomainMapper().map_one(result)
-        await self._store_result(task_id, result_domain)
+        await self._store_result(task_id, result)
 
     async def _store_result(self, task_id: UUID, result: TaskResultDTO):
         async with self.uow:
@@ -48,17 +52,27 @@ class RunTaskUseCase:
             await self.uow.tasks.update_by_pk(task_id, TaskUpdate(status=status, error=error))
             await self.uow.commit()
 
-    async def _run(self, task_id: UUID, command: TaskRun) -> TResponse | str:
+    async def _wait_for_result(self, task_id: UUID) -> tuple[TaskResultDTO | None, None | str]:
+        for _ in range(self.TIMEOUT_SECONDS):
+            await asyncio.sleep(1)
+
+            result = await self.runner.get_result(task_id)
+            result_domain = IntegrationResponseToDomainMapper().map_one(result)
+            if result_domain.status is TaskStatus.finished:
+                return result_domain, None
+        return None, "Timeout"
+
+    async def _run(self, task_id: UUID, command: TaskRun) -> tuple[TResponse | None, None | str]:
         try:
             result = await asyncio.wait_for(
                 self.runner.start(task_id, command), timeout=self.TIMEOUT_SECONDS
             )
         except asyncio.TimeoutError:
-            return "Generation run error: Timeout"
+            return None, "Generation run error: Timeout"
         except IntegrationRequestException as e:
             logger.opt(exception=True).warning(e)
-            return "Request error: " + str(e)
+            return None, "Request error: " + str(e)
         except Exception as e:
             logger.exception(e)
-            return "Internal exception: " + str(e)
-        return result
+            return None, "Internal exception: " + str(e)
+        return result, None
