@@ -51,7 +51,7 @@ class RunTaskUseCase:
     async def _run(self, task_id: UUID, command: TaskRun) -> TResponse | str:
         try:
             result = await asyncio.wait_for(
-                self.runner.start(task_id, self.token, command), timeout=self.TIMEOUT_SECONDS
+                self.runner.start(task_id, command), timeout=self.TIMEOUT_SECONDS
             )
         except asyncio.TimeoutError:
             return "Generation run error: Timeout"

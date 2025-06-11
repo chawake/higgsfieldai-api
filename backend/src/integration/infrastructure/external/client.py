@@ -107,8 +107,6 @@ class ExternalClient:
         return self._validate_response(response.data, ExternalToken)
 
     async def get_video_motions(self, request: ExternalGetMotionsRequest) -> ExternalGetMotionsResponse:
-        if self.auth_data is None:
-            raise ValueError("Failed to send external request: Attempt to request without credentials")
         response = await self.fnf_api.request("GET", "/motions", params=request.model_dump(exclude_none=True))
         return self._validate_response(response.data, ExternalGetMotionsResponse)
 
