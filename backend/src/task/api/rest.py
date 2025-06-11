@@ -20,7 +20,7 @@ async def create_and_run_task(
     account_token_refresher: AccountTokenRefreshedDepend,
     background_tasks: BackgroundTasks,
     data: TaskCreateDTO = Depends(TaskCreateDTO.as_form),
-    image: UploadFile | None = File(None),
+    image: UploadFile = File(),
 ):
     task = await CreateTaskUseCase(uow).execute(data)
     image_buffer = None

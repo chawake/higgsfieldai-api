@@ -18,6 +18,9 @@ class ExternalTaskRunner(ITaskRunner[IntegrationTask, ExternalImage2VideoGenerat
         self.client = client
         self.generation_repository = generation_repository
 
+    def set_client_token(self, token):
+        self.client.set_account_token(token)
+
     async def start(self, task_id: UUID, data: TaskRun) -> IntegrationTask:
         if data.image is None:
             return await self._start_text2video(task_id, data)

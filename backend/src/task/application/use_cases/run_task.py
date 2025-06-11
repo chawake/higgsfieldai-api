@@ -62,6 +62,7 @@ class RunTaskUseCase:
                 result = await self.runner.get_result(task_id)
             except IntegrationUnauthorizedExeception:
                 self.token = await self.token_refresher.execute(self.token)
+                self.runner.set_client_token(self.token)
                 return await self._wait_for_result(task_id)
             result_domain = IntegrationResponseToDomainMapper().map_one(result)
             if result_domain.status is TaskStatus.finished:
@@ -75,6 +76,7 @@ class RunTaskUseCase:
             )
         except IntegrationUnauthorizedExeception:
             self.token = await self.token_refresher.execute(self.token)
+            self.runner.set_client_token(self.token)
             return await self._run(task_id, command)
         except asyncio.TimeoutError:
             return None, "Generation run error: Timeout"
