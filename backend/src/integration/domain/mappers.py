@@ -24,6 +24,7 @@ class TaskRunToExternalRequestMapper:
             params=ExternalImage2VideoGenerationRequest.Params(
                 enhance_prompt=False,
                 prompt=task_run.prompt,
+                motion_id=task_run.motion_id or "d2389a9a-91c2-4276-bc9c-c9e35e8fb85a",  # 'General' motion, required by api
                 seed=randint(1, 1000000),
                 input_image=input_image
             )

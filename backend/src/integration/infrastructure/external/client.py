@@ -2,6 +2,7 @@ from io import BytesIO
 from loguru import logger
 from typing import Type, TypeVar
 from urllib.parse import quote_plus
+from contextlib import suppress
 
 from pydantic import BaseModel, ValidationError
 
@@ -121,10 +122,11 @@ class ExternalClient:
             raise ValueError("Failed to send external request: Attempt to request without credentials")
         await self.http_client.put(
             media_link.upload_url,
-            data=media.getvalue(),
-            headers={"Host": "fast-and-furious-input-prod-20250325165756276100000002.s3.amazonaws.com"},
+            headers={"Content-Type": "image/jpeg"},
+            data=media.read()
         )
-        await self.fnf_api.request("POST", f"/media/{media_link.id}/upload")
+        with suppress(IntegrationInvalidResponseException):  # Endpoint returns null
+            await self.fnf_api.request("POST", f"/media/{media_link.id}/upload")
         logger.debug(f"Uploaded media {media_link.id}")
         # PUT {media_link.upload_url}
         # Headers: Host: fast-and-furious-input-prod-20250325165756276100000002.s3.amazonaws.com

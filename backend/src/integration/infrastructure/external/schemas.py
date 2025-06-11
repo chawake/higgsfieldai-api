@@ -50,7 +50,6 @@ class ExternalGetMotionsRequest(BaseModel):
 class ExternalGetMotionsResponse(BaseModel):
     items: list[ExternalVideoMotionControl]
     total: int
-    cursor: int
 
 
 class ExternalCreateMediaLinkResponse(BaseModel):
@@ -72,7 +71,7 @@ class ExternalImage2VideoGenerationRequest(BaseModel):
         motion_id: str | None = None
         prompt: str
         seed: int = Field(description="Random generated", gt=0)
-        steps: int = 20
+        steps: int = 30
 
     params: Params
 

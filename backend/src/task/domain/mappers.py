@@ -33,7 +33,7 @@ class HiggsfieldaiResponseToDomainMapper:
         )
 
     @staticmethod
-    def _map_status(self, status: str) -> TaskStatus:
+    def _map_status(status: str) -> TaskStatus:
         if status == "queued":
             return TaskStatus.queued
         elif status == "in_progress":

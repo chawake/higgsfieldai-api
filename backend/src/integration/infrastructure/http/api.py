@@ -5,7 +5,7 @@ import aiohttp
 from loguru import logger
 from pydantic import BaseModel
 
-from src.integration.domain.exceptions import IntegrationRequestException, IntegrationUnauthorizedExeception
+from src.integration.domain.exceptions import IntegrationRequestException, IntegrationUnauthorizedExeception, IntegrationInvalidResponseException
 from src.integration.application.interfaces.http_client import IHttpClient
 
 
@@ -66,8 +66,11 @@ class HttpApiClient(AuthMixin):
                 raise IntegrationUnauthorizedExeception()
             raise IntegrationRequestException(message=await response.text())
 
-        response_data = ApiResponse(
-            data=await response.json(), cookies=dict(response.cookies.items()), headers=dict(response.headers.items())
-        )
+        try:
+            response_data = ApiResponse(
+                data=await response.json(), cookies=dict(response.cookies.items()), headers=dict(response.headers.items())
+            )
+        except aiohttp.client_exceptions.ContentTypeError as e:
+            raise IntegrationInvalidResponseException("Empty response") from e
         logger.debug(f"Get api response to {endpoint}: {response_data}")
         return response_data

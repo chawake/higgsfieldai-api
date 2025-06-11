@@ -56,6 +56,7 @@ class RunTaskUseCase:
         except asyncio.TimeoutError:
             return "Generation run error: Timeout"
         except IntegrationRequestException as e:
+            logger.opt(exception=True).warning(e)
             return "Request error: " + str(e)
         except Exception as e:
             logger.exception(e)
