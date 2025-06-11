@@ -1,3 +1,5 @@
+import json
+
 from src.account.domain.dtos import AccountTokenDTO
 from src.account.domain.entities import TokenCreate, AccountLogin
 from src.account.infrastructure.db.orm import AccountDB
@@ -13,6 +15,6 @@ class SignInAccountUseCase:
     async def execute(self, account: AccountDB) -> AccountTokenDTO:
         token = await self.auth_client.login(AccountLogin(username=account.username, password=account.password))
         async with self.uow:
-            await self.uow.tokens.create(TokenCreate(**token.model_dump(), account_id=account.id))
+            await self.uow.tokens.create(TokenCreate(**token.model_dump(exclude="cookies"), cookies=(json.dumps(token.cookies) if token.cookies else None), account_id=account.id))
             await self.uow.commit()
         return AccountTokenDTO(**token.model_dump())

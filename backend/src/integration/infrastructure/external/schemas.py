@@ -23,7 +23,7 @@ class ExternalSignInResponse(BaseModel):
     response: ExternalSignInAttempt
     client: ExternalClient
 
-    client_cookie: str
+    client_cookie: str | None = None
 
 
 class ExternalTouchSessionResponse(BaseModel):
@@ -68,7 +68,7 @@ class ExternalImage2VideoGenerationRequest(BaseModel):
         width: int = 1024
         input_audio: None = None
         input_image: ExternalMedia
-        model: Literal["lite", "standard", "turbo"]
+        model: Literal["lite", "standard", "turbo"] = "lite"
         motion_id: str | None = None
         prompt: str
         seed: int = Field(description="Random generated", gt=0)

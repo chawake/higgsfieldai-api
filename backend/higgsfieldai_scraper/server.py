@@ -17,7 +17,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
-            response = login(item["username"], item["password"])
+            try:
+                response = login(item["username"], item["password"])
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(str(e).encode())
+                return
 
             self.send_response(201)
             self.send_header("Content-type", "application/json")

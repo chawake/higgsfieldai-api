@@ -27,4 +27,4 @@ class TokenCreate(BaseModel):
     access_token: str
     session_id: str
     account_id: int
-    cookies: dict[str, str] | None = None
+    cookies: str | None = None

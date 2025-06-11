@@ -13,12 +13,11 @@ class ScrapperClient(HttpApiClient):
         client: IHttpClient = AsyncHttpClient(),
         source_url: str = settings.SCRAPPER_API_URL,
     ):
-        self.client = client
-        self.source_url = source_url
+        super().__init__(client, source_url)
 
     async def login(self, username: str, password: str) -> ScrapperLoginResponse:
         response = await self.request("POST", "/login", json={"username": username, "password": password})
         try:
-            return ScrapperLoginResponse.model_validate(response)
+            return ScrapperLoginResponse.model_validate(response.data)
         except ValidationError as e:
             raise IntegrationRequestException(str(e)) from e

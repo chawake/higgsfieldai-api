@@ -4,5 +4,5 @@ from src.integration.infrastructure.external.schemas import ExternalSignInRespon
 
 
 class ScrapperLoginResponse(BaseModel):
-    response: ExternalSignInResponse
+    sign_in_response: ExternalSignInResponse
     cookies: dict[str, str]

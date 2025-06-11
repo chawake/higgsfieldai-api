@@ -58,5 +58,6 @@ class RunTaskUseCase:
         except IntegrationRequestException as e:
             return "Request error: " + str(e)
         except Exception as e:
-            return "Internal exception"
+            logger.exception(e)
+            return "Internal exception: " + str(e)
         return result

@@ -18,7 +18,7 @@ class ExternalAuthClient(IAuthClient):
         return self._map_response_to_token(response)
 
     async def refresh_token(self, token: Token) -> Token:
-        if not self._refresh_needed(token):
+        if not await self._refresh_needed(token):
             return token
 
         self.external_client.set_account_token(AccountTokenDTO(**token.model_dump()))
@@ -36,11 +36,11 @@ class ExternalAuthClient(IAuthClient):
     def _map_response_to_token(self, response: ScrapperLoginResponse) -> Token:
         last_active_session = next(
             session
-            for session in response.response.client.sessions
-            if session.id == response.response.client.last_active_session_id
+            for session in response.sign_in_response.client.sessions
+            if session.id == response.sign_in_response.client.last_active_session_id
         )
         return Token(
             access_token=last_active_session.last_active_token.jwt,
-            session_id=response.response.response.created_session_id,
+            session_id=response.sign_in_response.response.created_session_id,
             cookies=response.cookies,
         )

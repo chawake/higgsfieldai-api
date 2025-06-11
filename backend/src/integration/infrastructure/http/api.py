@@ -32,11 +32,11 @@ class HttpApiClient(AuthMixin):
         cookies: dict | None = None,
         token: str | None = None,
     ):
+        self.token = token
         self.client = client
         self.source_url = source_url
         self.headers = {**(headers or {}), **self.auth_headers}
         self.cookies = cookies or {}
-        self.token = token
 
     async def request(
         self,

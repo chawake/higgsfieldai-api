@@ -19,9 +19,7 @@ class ExternalTaskRunner(ITaskRunner[IntegrationTask, ExternalImage2VideoGenerat
     async def start(
         self, task_id: UUID, token: AccountTokenDTO, data: ExternalImage2VideoGenerationRequest
     ) -> IntegrationTask:
-        auth_data = AccountTokenDTOToExternalAuthDataMapper().map_one(token)
-
-        response = await self.client.start_image2video_generation(auth_data, data)
+        response = await self.client.start_image2video_generation(data)
         await self.generation_repository.create(task_id=task_id, external_id=response.job_sets[0].id)
 
         return IntegrationTask(
@@ -31,9 +29,7 @@ class ExternalTaskRunner(ITaskRunner[IntegrationTask, ExternalImage2VideoGenerat
 
     async def get_result(self, task_id: UUID, token: AccountTokenDTO) -> IntegrationTask | None:
         generation = await self.generation_repository.get_by_task_id(task_id)
-        auth_data = AccountTokenDTOToExternalAuthDataMapper().map_one(token)
-
-        response = await self.client.get_job_set(auth_data, generation.external_id)
+        response = await self.client.get_job_set(generation.external_id)
 
         return IntegrationTask(
             status=response.jobs[0].status, result=response.jobs[0].result.url if response.jobs[0].result else None

@@ -1,28 +1,43 @@
 import json
+from selenium import webdriver
 from typing import Literal
+from selenium.common.exceptions import TimeoutException
 from seleniumwire import webdriver
-import seleniumwire.undetected_chromedriver as uc
 from seleniumwire.utils import decode
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 
-options = uc.ChromeOptions()
-options.add_argument("--no-sandbox")
-options.add_argument("--headless")
-options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(options=options)
-
-
 def login(email: str, password: str) -> dict[Literal["sign_in_response", "cookies"], dict]:
+    options = webdriver.ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--headless")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--user-data-dir=./seleniumcache")
+    driver = webdriver.Chrome(options=options)
+
+    for _ in range(3):
+        try:
+            return _login(driver, email, password)
+        except TimeoutException:
+            continue
+    raise ValueError("Can't login(Probably network error)")
+
+def _login(driver, email, password):
     driver.get("https://higgsfield.ai/auth/login")
 
     print("Get login page")
 
-    login_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[type="submit"]'))
-    )
+    try:
+        login_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[type="submit"]'))
+        )
+    except TimeoutException:
+        driver.refresh()
+        login_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[type="submit"]'))
+        )
 
     email_input = driver.find_element(By.CSS_SELECTOR, 'input[type="email"]')
     email_input.clear()
@@ -60,5 +75,7 @@ def login(email: str, password: str) -> dict[Literal["sign_in_response", "cookie
                 cookie = header.split(";", 1)
                 key, value = cookie[0].split("=")
                 cookies[key] = value
+
+    driver.delete_all_cookies()
 
     return {"sign_in_response": json.loads(sign_in_response), "cookies": cookies}

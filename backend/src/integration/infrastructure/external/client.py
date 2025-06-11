@@ -1,4 +1,5 @@
 from io import BytesIO
+from loguru import logger
 from typing import Type, TypeVar
 from urllib.parse import quote_plus
 
@@ -126,6 +127,7 @@ class ExternalClient:
             headers={"Host": "fast-and-furious-input-prod-20250325165756276100000002.s3.amazonaws.com"},
         )
         await self.fnf_api.request("POST", f"/media/{media_link.id}/upload")
+        logger.debug(f"Uploaded media {media_link.id}")
         # PUT {media_link.upload_url}
         # Headers: Host: fast-and-furious-input-prod-20250325165756276100000002.s3.amazonaws.com
         # POST https://fnf.higgsfield.ai/media/{media_link.id}/upload
@@ -137,8 +139,9 @@ class ExternalClient:
     ) -> ExternalImage2VideoGenerationResponse:
         if self.auth_data is None:
             raise ValueError("Failed to send external request: Attempt to request without credentials")
+        logger.debug(f"Sending image2video request: {request}")
         try:
-            response = await self.fnf_api.request("POST", "/jobs/image2video", json=request.model_dump())
+            response = await self.fnf_api.request("POST", "/jobs/image2video", json=request.model_dump(mode="json"))
         except IntegrationRequestException as e:
             if e.message is not None and "Internal Server Error" in str(e):
                 raise IntegrationRequestException(

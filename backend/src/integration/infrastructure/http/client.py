@@ -6,7 +6,7 @@ from loguru import logger
 from src.integration.application.interfaces.http_client import IHttpClient
 
 SIZE_POOL_AIOHTTP = 100
-CONNECTION_TIMEOUT = 30
+CONNECTION_TIMEOUT = 120
 logger = logger.bind(name="httpclient")
 
 
