@@ -4,19 +4,18 @@ from src.integration.domain.exceptions import IntegrationUnauthorizedExeception
 from src.account.application.interfaces.auth_client import IAuthClient
 from src.integration.infrastructure.external.client import ExternalClient
 from src.integration.infrastructure.external.schemas import ExternalSignInRequest, ExternalSignInResponse
+from src.integration.infrastructure.scrapper.client import ScrapperClient
+from src.integration.infrastructure.scrapper.schemas import ScrapperLoginResponse
 
 
 class ExternalAuthClient(IAuthClient):
     def __init__(self) -> None:
         self.external_client = ExternalClient(account_token=None)
+        self.scrapper_client = ScrapperClient()
 
     async def login(self, data: AccountLogin) -> Token:
-        request = ExternalSignInRequest(identifier=data.username, password=data.password)
-        response = await self.external_client.sign_in(request)
-        token = self._map_response_to_token(response)
-        self.external_client.set_account_token(token)
-        await self.external_client.touch_session()
-        return Token(**token.model_dump())
+        response = await self.scrapper_client.login(data.username, data.password)
+        return self._map_response_to_token(response)
 
     async def refresh_token(self, token: Token) -> Token:
         if not self._refresh_needed(token):
@@ -34,12 +33,14 @@ class ExternalAuthClient(IAuthClient):
             return True
         return False
 
-    def _map_response_to_token(self, response: ExternalSignInResponse) -> AccountTokenDTO:
+    def _map_response_to_token(self, response: ScrapperLoginResponse) -> Token:
         last_active_session = next(
-            session for session in response.client.sessions if session.id == response.client.last_active_session_id
+            session
+            for session in response.response.client.sessions
+            if session.id == response.response.client.last_active_session_id
         )
-        return AccountTokenDTO(
+        return Token(
             access_token=last_active_session.last_active_token.jwt,
-            session_id=response.response.created_session_id,
-            cookies={"__client": response.client_cookie},
+            session_id=response.response.response.created_session_id,
+            cookies=response.cookies,
         )

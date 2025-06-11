@@ -15,9 +15,22 @@ services:
       - app_localstorage:/app/storage
       - app_logs:/app/logs
 
+  scraper:
+    container_name: ${PROJECT_NAME}_scrapper
+    build:
+      context: ./backend/higgsfieldai_scraper
+    env_file: ./.env
+    restart: always
+    ports:
+      - "9080:80"
+    networks:
+      default:
+
   db:
     image: postgres:latest
     container_name: ${PROJECT_NAME}_db
+    ports:
+      - "5432:5432"
     env_file:
       - .env
     volumes:

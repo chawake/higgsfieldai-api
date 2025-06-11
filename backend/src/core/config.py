@@ -8,12 +8,13 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     ENVIRONMENT: Literal["test", "prod"] = "prod"
     DOMAIN: str = ""
+    PROJECT_NAME: str = os.environ.get("PROJECT_NAME", "UNNAMED PROJECT")
+
     API_TOKEN: str = "123"
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "admin"
     SECRET_KEY: str = "REPLACEME"
-
-    PROJECT_NAME: str = os.environ.get("PROJECT_NAME", "UNNAMED PROJECT")
+    SCRAPPER_API_URL = "http://" + os.environ.get("PROJECT_NAME", "UNNAMED PROJECT") + "_scrapper:80"
 
     DB_TYPE: Literal["POSTGRESQL", "ASYNC_POSTGRESQL", "SQLITE", "ASYNC_SQLITE"] = os.environ.get("DB_TYPE")
     DB_NAME: str = os.environ.get("DB_NAME")
