@@ -21,16 +21,12 @@ services:
       context: ./backend/higgsfieldai_scraper
     env_file: ./.env
     restart: always
-    ports:
-      - "9080:80"
     networks:
       default:
 
   db:
     image: postgres:latest
     container_name: ${PROJECT_NAME}_db
-    ports:
-      - "5432:5432"
     env_file:
       - .env
     volumes:
