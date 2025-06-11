@@ -4,11 +4,12 @@ from uuid import UUID
 
 from loguru import logger
 
+from src.account.application.use_cases.refresh_account_tokens import RefreshAccountTokensUseCase
 from src.task.domain.dtos import TaskCreateDTO, TaskResultDTO
 from src.account.domain.dtos import AccountTokenDTO
 from src.task.domain.mappers import IntegrationResponseToDomainMapper
 from src.task.domain.entities import TaskRun, TaskStatus, TaskUpdate
-from src.integration.domain.exceptions import IntegrationRequestException
+from src.integration.domain.exceptions import IntegrationRequestException, IntegrationUnauthorizedExeception
 from src.task.application.interfaces.task_uow import ITaskUnitOfWork
 from src.task.application.interfaces.task_runner import TResponse, ITaskRunner
 
@@ -16,10 +17,11 @@ from src.task.application.interfaces.task_runner import TResponse, ITaskRunner
 class RunTaskUseCase:
     TIMEOUT_SECONDS = 5 * 60
 
-    def __init__(self, uow: ITaskUnitOfWork, runner: ITaskRunner, token: AccountTokenDTO) -> None:
+    def __init__(self, uow: ITaskUnitOfWork, runner: ITaskRunner, token: AccountTokenDTO, token_refresher: RefreshAccountTokensUseCase) -> None:
         self.uow = uow
         self.runner = runner
         self.token = token
+        self.token_refresher = token_refresher
 
     async def execute(self, task_id: UUID, dto: TaskCreateDTO, image: BytesIO | None) -> None:
         """Run it in background"""
@@ -56,7 +58,11 @@ class RunTaskUseCase:
         for _ in range(self.TIMEOUT_SECONDS):
             await asyncio.sleep(1)
 
-            result = await self.runner.get_result(task_id)
+            try:
+                result = await self.runner.get_result(task_id)
+            except IntegrationUnauthorizedExeception:
+                self.token = await self.token_refresher.execute(self.token)
+                return await self._wait_for_result(task_id)
             result_domain = IntegrationResponseToDomainMapper().map_one(result)
             if result_domain.status is TaskStatus.finished:
                 return result_domain, None
@@ -67,6 +73,9 @@ class RunTaskUseCase:
             result = await asyncio.wait_for(
                 self.runner.start(task_id, command), timeout=self.TIMEOUT_SECONDS
             )
+        except IntegrationUnauthorizedExeception:
+            self.token = await self.token_refresher.execute(self.token)
+            return await self._run(task_id, command)
         except asyncio.TimeoutError:
             return None, "Generation run error: Timeout"
         except IntegrationRequestException as e:

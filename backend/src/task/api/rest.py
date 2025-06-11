@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import File, Depends, APIRouter, UploadFile, BackgroundTasks
 
 from src.task.domain.dtos import TaskReadDTO, TaskCreateDTO
-from src.task.api.dependencies import TaskUoWDepend, TaskRunnerDepend, AccountTokenDepend
+from src.task.api.dependencies import AccountTokenRefreshedDepend, TaskUoWDepend, TaskRunnerDepend, AccountTokenDepend
 from src.task.application.use_cases.get_task import GetTaskUseCase
 from src.task.application.use_cases.run_task import RunTaskUseCase
 from src.task.application.use_cases.create_task import CreateTaskUseCase
@@ -17,6 +17,7 @@ async def create_and_run_task(
     uow: TaskUoWDepend,
     runner: TaskRunnerDepend,
     account_token: AccountTokenDepend,
+    account_token_refresher: AccountTokenRefreshedDepend,
     background_tasks: BackgroundTasks,
     data: TaskCreateDTO = Depends(TaskCreateDTO.as_form),
     image: UploadFile | None = File(None),
@@ -25,7 +26,7 @@ async def create_and_run_task(
     image_buffer = None
     if image is not None:
         image_buffer = BytesIO(await image.read())
-    background_tasks.add_task(RunTaskUseCase(uow, runner, account_token).execute, task.id, data, image_buffer)
+    background_tasks.add_task(RunTaskUseCase(uow, runner, account_token, account_token_refresher).execute, task.id, data, image_buffer)
     return task
 
 
