@@ -12,7 +12,7 @@ class AccountDB(BaseMixin, Base):
     password: Mapped[str]
     balacne_left: Mapped[int | None]
 
-    tokens: Mapped[list["AccountTokenDB"]] = relationship(back_populates="account", lazy="selectin")
+    tokens: Mapped[list["AccountTokenDB"]] = relationship(back_populates="account", lazy="selectin", cascade="all,delete")
 
 
 class AccountTokenDB(BaseMixin, Base):
