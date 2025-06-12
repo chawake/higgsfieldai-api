@@ -9,7 +9,7 @@ from src.task.application.interfaces.http_client import IHttpClient
 from src.task.domain.dtos import TaskCreateDTO, TaskReadDTO, TaskResultDTO
 from src.account.domain.dtos import AccountTokenDTO
 from src.task.domain.mappers import IntegrationResponseToDomainMapper
-from src.task.domain.entities import TaskRun, TaskStatus, TaskUpdate
+from src.task.domain.entities import Task, TaskRun, TaskStatus, TaskUpdate
 from src.integration.domain.exceptions import IntegrationRequestException, IntegrationUnauthorizedExeception
 from src.task.application.interfaces.task_uow import ITaskUnitOfWork
 from src.task.application.interfaces.task_runner import TResponse, ITaskRunner
