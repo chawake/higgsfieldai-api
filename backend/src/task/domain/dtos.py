@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Type
 
 from fastapi import Form
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 from src.task.domain.entities import TaskStatus
 from src.integration.domain.dtos import IntegrationTaskRunParamsDTO
@@ -33,9 +33,10 @@ def as_form(cls: Type[BaseModel]):
 
 
 @as_form
-class TaskCreateDTO(IntegrationTaskRunParamsDTO, BaseModel):
+class TaskCreateDTO(IntegrationTaskRunParamsDTO):
     user_id: str
     app_bundle: str
+    webhook_url: HttpUrl | None = None
 
     @classmethod
     def as_form(cls): ...
