@@ -51,7 +51,7 @@ class RunTaskUseCase:
         if webhook_url is None:
             return
         data = TaskReadDTO(id=task_id, **result.model_dump())
-        response = await self.http_client.post(webhook_url, json=data.model_dump(mode="json"))
+        response = await self.http_client.post(str(webhook_url), json=data.model_dump(mode="json"))
         logger.debug(f"Sended webhook {task_id=}: {response}")
 
     async def _store_result(self, task_id: UUID, result: TaskResultDTO) -> Task:
