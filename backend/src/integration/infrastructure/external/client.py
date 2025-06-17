@@ -97,6 +97,11 @@ class ExternalClient:
         response = await self.fnf_api.request("GET", "https://fnf.higgsfield.ai/user")
         return self._validate_response(response.data, ExternalGetUserResponse)
 
+    async def check_account_balance(self):
+        user = await self.get_current_user()
+        if user.subscription_credits / user.total_plan_credits < 0.1:
+            logger.bind(name="balance").error(f"Account left credits < 10% ({user.subscription_credits}/{user.total_plan_credits})")
+
     async def refresh_token(self) -> ExternalToken:
         if self.auth_data is None:
             raise ValueError("Failed to send external request: Attempt to request without credentials")
@@ -140,6 +145,7 @@ class ExternalClient:
         if self.auth_data is None:
             raise ValueError("Failed to send external request: Attempt to request without credentials")
         logger.debug(f"Sending image2video request: {request}")
+        await self.check_account_balance()
         try:
             response = await self.fnf_api.request("POST", "/jobs/image2video", json=request.model_dump(mode="json"))
         except IntegrationRequestException as e:
@@ -159,4 +165,3 @@ class ExternalClient:
         return self._validate_response(response.data, ExternalJobSet)
         # GET https://fnf.higgsfield.ai/job-sets/{job_set_id}
         # Headers: Authorization
-        ...
