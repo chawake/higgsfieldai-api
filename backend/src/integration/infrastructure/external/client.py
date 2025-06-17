@@ -143,6 +143,8 @@ class ExternalClient:
         try:
             response = await self.fnf_api.request("POST", "/jobs/image2video", json=request.model_dump(mode="json"))
         except IntegrationRequestException as e:
+            if "not_enough_credits" in str(e):
+                logger.bind(name="balance").error(f"Unsufficient https://higgsfield.ai credits ({str(e)}) in session {self.auth_data.session_id}")
             if e.message is not None and "Internal Server Error" in str(e):
                 raise IntegrationRequestException(
                     message="Higgsfield internal error. Probably content moderation not passed"
