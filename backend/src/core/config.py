@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "admin"
     SECRET_KEY: str = "REPLACEME"
-    SCRAPPER_API_URL: str = "http://" + os.environ.get("PROJECT_NAME", "UNNAMED PROJECT") + "_scrapper:80"
+    SCRAPPER_API_URL: str = os.environ.get("SCRAPPER_API_URL", "http://scraper:80")
 
-    DB_TYPE: Literal["POSTGRESQL", "ASYNC_POSTGRESQL", "SQLITE", "ASYNC_SQLITE"] = os.environ.get("DB_TYPE")
+    DB_TYPE: Literal["POSTGRESQL", "ASYNC_POSTGRESQL", "SQLITE", "ASYNC_SQLITE"] = os.environ.get("DB_TYPE", "ASYNC_POSTGRESQL")
     DB_NAME: str = os.environ.get("DB_NAME")
     DB_USER: str | None = os.environ.get("DB_USER")
     DB_PASSWORD: str | None = os.environ.get("DB_PASSWORD")

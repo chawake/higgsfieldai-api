@@ -75,6 +75,7 @@ ENV PATH=/app/bin:$PATH \
   PYTHONUNBUFFERED=1
 
 COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 
 COPY --link --chown=$user_id:$group_id --from=build /app/ /app
 COPY ./backend/alembic /app/alembic
