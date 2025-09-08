@@ -4,13 +4,16 @@ services:
       context: ./
     container_name: ${PROJECT_NAME}_app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     restart: always
     networks:
-      global_network:
-      default:
+      - default
+      - global_network
     volumes:
       - app_localstorage:/app/storage
       - app_logs:/app/logs
@@ -25,28 +28,34 @@ services:
       default:
 
   db:
-    image: postgres:latest
+    image: postgres:14-alpine
     container_name: ${PROJECT_NAME}_db
     env_file:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./etc/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./etc/postgresql/:/etc/postgresql/:ro
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     command: >
       bash -c "
-      cp /etc/postgresql/pg_hba.conf /var/lib/postgresql/data/pg_hba.conf &&
-      docker-entrypoint.sh postgres
+      cp /etc/postgresql/pg_hba.conf /var/lib/postgresql/data/ &&
+      docker-entrypoint.sh postgres -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/var/lib/postgresql/data/pg_hba.conf' -c 'listen_addresses=*'
       "
     networks:
       default:
 
 networks:
   default:
+    driver: bridge
   global_network:
     external: true
 
