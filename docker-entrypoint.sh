@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Wait for the database to be reachable before running migrations
 echo "Waiting for database ${DB_HOST:-db}:${DB_PORT:-5432}..."
@@ -27,4 +28,8 @@ do
 done
 
 alembic upgrade head
-gunicorn src.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8080 --forwarded-allow-ips="*"
+
+# Allow overriding the listen port via PORT. Default to 8080.
+PORT="${PORT:-8080}"
+echo "Starting Gunicorn on port ${PORT}"
+gunicorn src.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:${PORT} --forwarded-allow-ips="*"
