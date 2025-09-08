@@ -12,87 +12,87 @@ pip install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Download dependencies
+Загрузка зависимостей
 ```bash
 uv sync --frozen
 ```
 
-Create a virtual environment
+Создание вирт. окружения
 ```bash
 cp example.env .env
-# Edit .env with the necessary settings
+# Отредактировать .env с необходимыми настройками
 ```
 
-Launch
+Запуск
 ```bash
 docker compose up -d --build
 ```
-Launch dev profile (with forwarded ports for DB and application)
+Запуск профиля dev(прокинуты порты БД и приложения)
 ```bash
 docker compose --profile dev up -d --build
 ```
 
-Or locally
+Или локально
 ```bash
 uvx uvicorn backend.src.main:app --reload
 ```
 
-## Code documentation
+## Документация кода
 
-Main structure
+Основная структура
 ```
 backend
-├── alembic                 Alembic files (DB migrations)
+├── alembic                 Файлы alembic (миграции БД)
 ├── alembic.ini
-└── src                     Modules
-    ├── core                Internal settings/frequently used
-    │   ├── config.py
-    │   ├── admin.py
-    │   └── logging_setup.py
-    ├── db                  ORM settings and DB connection
-    ├── integration         Module for integration with external services
-    ├── main.py             Entry point
-    └── task                Module for working with tasks. Launching, queuing, etc.
+└── src                     Модули
+    ├── core                Внутренние настройки/часто используемое
+    │   ├── config.py
+    │   ├── admin.py
+    │   └── logging_setup.py
+    ├── db                  Настройки ORM и подключения к бд
+    ├── integration         Модуль интеграции с внешними сервисами
+    ├── main.py             Входная точка
+    └── task                Модуль работы с задачами. Запуск, постановка в очередь и т.д.
 ```
 
-Module structure
+Структура модуля
 ```
 task
-├── api                         External data layer
+├── api                         Слой внешних данных
 
-│   ├── dependencies.py         Module dependencies
-│   ├── admin.py                ModelView settings for sqladmin
-│   └── rest.py                 FastAPI endpoints
+│   ├── dependencies.py         Зависимости модуля
+│   ├── admin.py                Настройка ModelView для sqladmin
+│   └── rest.py                 Эндпоинты FastAPI
 
-├── application                 Business logic layer
-│   ├── interfaces
-│   │   ├── task_repository.py  Working with the task model in the DB
-│   │   ├── task_runner.py      Interface for launching and getting the task result
-│   │   └── task_uow.py         Unit of work. Facilitates working with sessions
-│   └── use_cases
-│       ├── create_task.py      Saving the task to the DB
-│       ├── get_task.py         Getting the task from the DB
-│       └── run_task.py         Launching the task (via integration)
+├── application                 Слой бизнес-логики
+│   ├── interfaces
+│   │   ├── task_repository.py  Работа с моделью задачи в БД
+│   │   ├── task_runner.py      Интерфейс для запуска и получения результата задачи
+│   │   └── task_uow.py         Unit of work. Облегчает работу с сессиями
+│   └── use_cases
+│       ├── create_task.py      Сохранение задачи в БД
+│       ├── get_task.py         Получение задачи из БД
+│       └── run_task.py         Запуск задачи (через интеграцию)
 
-├── domain                      Data layer
-│   ├── dtos.py
-│   ├── entities.py             Module domain models
-│   └── mappers.py              Translating a model from one form to another
+├── domain                      Слой данных
+│   ├── dtos.py
+│   ├── entities.py             Предметные модели модуля
+│   └── mappers.py              Перевод модели из одного вида в другой
 
-└── infrastructure              Data access layer. Interface implementation.
-    └── db                      DB data access
-        ├── orm.py              ORM models (sqlalchemy)
-        ├── task_repository.py
-        └── unit_of_work.py
+└── infrastructure              Слой доступа к данным. Реализация интерфейсов.
+    └── db                      Доступ к данным БД
+        ├── orm.py              ORM модели(sqlalchemy)
+        ├── task_repository.py
+        └── unit_of_work.py
 ```
 
-Task workflow
+Флоу работы с задачей
 1) src.task.api.rest - FastAPI POST /api/task
-2) src.task.application.use_cases.create_task - Saving to the DB
-3) src.task.application.use_cases.run_task - Launched in the background. Launch and wait for the result
-4) src.integration.infrastructure.task_runner - Working with integration (HTTP, sending a request, getting the result)
-5) src.task.application.use_cases.run_task - Saving the result (content or error) to the DB
+2) src.task.application.use_cases.create_task - Сохранение в БД
+3) src.task.application.use_cases.run_task - Запускается в фоне. Запуск и ожидание результата
+4) src.integration.infrastructure.task_runner - Работа с интеграцией(HTTP, отправка запроса, получение результата)
+5) src.task.application.use_cases.run_task - Сохранение результата (контент или ошибка) в БД
 6) src.task.api.rest - FastAPI GET /api/task/{task_id}
-7) src.task.application.use_cases.get_task - Getting the task from the DB
+7) src.task.application.use_cases.get_task - Получение задачи из БД
 
-The architecture allows for easy expansion of existing business logic, rewriting individual parts, and developing tests. I recommend strictly following it for ease of API maintenance.
+Архитектура позволяет легко расширять имеющуюся бизнес-логику, переписывать отдельные части и разрабатывать тесты. Рекомендую строго соблюдать ее, для простоты поддержки API
