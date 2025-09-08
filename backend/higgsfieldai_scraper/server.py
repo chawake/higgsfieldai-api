@@ -6,6 +6,16 @@ queue = []
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path in ("/", "/health"):
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok"}).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
     def do_POST(self):
         if self.path == "/login":
             content_length = int(self.headers["Content-Length"])

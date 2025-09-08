@@ -1,7 +1,7 @@
 import json
 from selenium import webdriver
 from typing import Literal
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from seleniumwire import webdriver
 from seleniumwire.utils import decode
 from selenium.webdriver.common.by import By
@@ -15,6 +15,7 @@ def login(email: str, password: str) -> dict[Literal["sign_in_response", "cookie
     options.add_argument("--headless")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--user-data-dir=./seleniumcache")
+    options.add_argument("--window-size=1920,1080")
     driver = webdriver.Chrome(options=options)
 
     for _ in range(3):
@@ -23,6 +24,7 @@ def login(email: str, password: str) -> dict[Literal["sign_in_response", "cookie
         except TimeoutException:
             continue
     raise ValueError("Can't login(Probably network error)")
+
 
 def _login(driver, email, password):
     driver.get("https://higgsfield.ai/auth/login")
@@ -50,8 +52,13 @@ def _login(driver, email, password):
 
     print("Password entered")
 
+    # Ensure the button is in view and try a JS click if intercepted
     login_button = driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]')
-    login_button.click()
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", login_button)
+    try:
+        login_button.click()
+    except ElementClickInterceptedException:
+        driver.execute_script("arguments[0].click();", login_button)
 
     print("Login button clicked")
 

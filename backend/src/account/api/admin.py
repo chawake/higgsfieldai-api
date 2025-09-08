@@ -1,5 +1,6 @@
 from fastapi import Request
 from sqladmin import ModelView
+from loguru import logger
 
 from src.account.api.dependencies import get_account_uow
 from src.integration.api.dependencies import get_auth_client
@@ -12,7 +13,12 @@ class AccountAdmin(ModelView, model=AccountDB):
     column_list = [AccountDB.username, AccountDB.password, AccountDB.created_at]
 
     async def after_model_change(self, data: dict, model: AccountDB, is_created: bool, request: Request) -> None:
-        await SignInAccountUseCase(get_account_uow(), get_auth_client()).execute(model)
+        try:
+            await SignInAccountUseCase(get_account_uow(), get_auth_client()).execute(model)
+        except Exception as e:
+            logger.warning(f"Post-save scraper sign-in failed for account {model.username}: {e}")
+            # Do not block the admin UI on scraper/transient issues
+            return
 
 
 class AccountTokenAdmin(ModelView, model=AccountTokenDB):
