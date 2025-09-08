@@ -9,7 +9,10 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - DB_TYPE=ASYNC_POSTGRESQL
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     restart: always
     networks:
       - default
@@ -39,19 +42,53 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     command: >
       bash -c "
-      cp /etc/postgresql/pg_hba.conf /var/lib/postgresql/data/ &&
-      docker-entrypoint.sh postgres -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/var/lib/postgresql/data/pg_hba.conf' -c 'listen_addresses=*'
+      if [ ! -f /var/lib/postgresql/data/pgdata/PG_VERSION ]; then
+        mkdir -p /var/lib/postgresql/data/pgdata
+        chown -R postgres:postgres /var/lib/postgresql/data/pgdata
+        initdb -D /var/lib/postgresql/data/pgdata
+      fi && \
+      cp /etc/postgresql/pg_hba.conf /var/lib/postgresql/data/pgdata/ && \
+      exec docker-entrypoint.sh postgres \
+        -c 'config_file=/etc/postgresql/postgresql.conf' \
+        -c 'hba_file=/var/lib/postgresql/data/pgdata/pg_hba.conf' \
+        -c 'listen_addresses=*' \
+        -c 'shared_preload_libraries=pg_stat_statements' \
+        -c 'max_connections=100' \
+        -c 'shared_buffers=256MB' \
+        -c 'work_mem=4MB' \
+        -c 'maintenance_work_mem=64MB' \
+        -c 'effective_cache_size=768MB' \
+        -c 'fsync=on' \
+        -c 'synchronous_commit=on' \
+        -c 'full_page_writes=on' \
+        -c 'checkpoint_timeout=5min' \
+        -c 'checkpoint_completion_target=0.9' \
+        -c 'max_wal_size=1GB' \
+        -c 'min_wal_size=80MB' \
+        -c 'log_statement=none' \
+        -c 'log_duration=off' \
+        -c 'log_lock_waits=on' \
+        -c 'log_min_duration_statement=1000' \
+        -c 'log_connections=on' \
+        -c 'log_disconnections=on' \
+        -c 'log_min_messages=warning' \
+        -c 'log_min_error_statement=error' \
+        -c 'log_line_prefix='%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
       "
     networks:
       default:
+        aliases:
+          - database
 
 networks:
   default:
