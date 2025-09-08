@@ -31,13 +31,17 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./etc/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./etc/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     restart: always
-    #command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    command: >
+      bash -c "
+      cp /etc/postgresql/pg_hba.conf /var/lib/postgresql/data/pg_hba.conf &&
+      docker-entrypoint.sh postgres
+      "
     networks:
       default:
 
