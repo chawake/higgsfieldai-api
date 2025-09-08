@@ -16,7 +16,6 @@ services:
     restart: always
     networks:
       - default
-      - global_network
     volumes:
       - app_localstorage:/app/storage
       - app_logs:/app/logs
@@ -93,8 +92,6 @@ services:
 networks:
   default:
     driver: bridge
-  global_network:
-    external: true
 
 volumes:
   postgres_data:
