@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from sqladmin import Admin
 
 from src.db.engine import engine
@@ -12,6 +13,9 @@ from src.integration.api.rest import router as integration_router
 
 app = FastAPI(title=settings.PROJECT_NAME)
 setup_fastapi_logging(app)
+
+# Trust reverse proxy headers from Coolify
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 
 app.include_router(task_router, prefix="/api/task", tags=["Task"])
